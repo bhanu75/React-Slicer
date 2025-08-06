@@ -1,0 +1,33 @@
+{
+  "name": "react-modularizer-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to extract React components from monolithic App.jsx files",
+  "main": "modularize.js",
+  "bin": {
+    "modularize": "./modularize.js"
+  },
+  "scripts": {
+    "start": "node modularize.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "react",
+    "modularize",
+    "components",
+    "cli",
+    "ast",
+    "babel"
+  ],
+  "author": "Internal Dev Team",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.23.0",
+    "@babel/traverse": "^7.23.0",
+    "@babel/generator": "^7.23.0",
+    "@babel/core": "^7.23.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
