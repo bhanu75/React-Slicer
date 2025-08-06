@@ -5,9 +5,6 @@ const ReactModularizer = require('./modularize');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -252,16 +249,19 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('🚀 React Component Modularizer Server');
-  console.log('=' .repeat(50));
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  console.log(`🔧 API: http://localhost:${PORT}/api`);
-  console.log(`📊 Health: http://localhost:${PORT}/api/health`);
-  console.log(`📋 Status: http://localhost:${PORT}/api/status`);
-  console.log('=' .repeat(50));
-  console.log('✅ Server ready for professional use!');
-});
+// For local development only
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('🚀 React Component Modularizer Server');
+    console.log('=' .repeat(50));
+    console.log(`🌐 Frontend: http://localhost:${PORT}`);
+    console.log(`🔧 API: http://localhost:${PORT}/api`);
+    console.log(`📊 Health: http://localhost:${PORT}/api/health`);
+    console.log(`📋 Status: http://localhost:${PORT}/api/status`);
+    console.log('=' .repeat(50));
+    console.log('✅ Server ready for professional use!');
+  });
+}
 
+// Export for Vercel
 module.exports = app;
