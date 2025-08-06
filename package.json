@@ -1,26 +1,33 @@
 {
-  "name": "react-component-modularizer",
+  "name": "react-modularizer-cli",
   "version": "1.0.0",
-  "description": "Professional React Component Modularizer",
-  "main": "server.js",
-  "engines": {
-    "node": "18.x"
+  "description": "CLI tool to extract React components from monolithic App.jsx files",
+  "main": "modularize.js",
+  "bin": {
+    "modularize": "./modularize.js"
   },
+  "scripts": {
+    "start": "node modularize.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "react",
+    "modularize",
+    "components",
+    "cli",
+    "ast",
+    "babel"
+  ],
+  "author": "Internal Dev Team",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "@babel/parser": "^7.23.0",
     "@babel/traverse": "^7.23.0",
     "@babel/generator": "^7.23.0",
-    "prettier": "^3.0.0",
-    "serverless-http": "^3.0.0"
+    "@babel/core": "^7.23.0",
+    "prettier": "^3.0.0"
   },
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'Build complete'",
-    "vercel-build": "echo 'No build step required'"
-  },
-  "keywords": ["react", "component", "modularizer"],
-  "author": "Dev Team",
-  "license": "MIT"
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }
