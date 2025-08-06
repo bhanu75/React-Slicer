@@ -1,10 +1,21 @@
 {
+  "name": "react-component-modularizer",
+  "version": "1.0.0",
+  "description": "Professional tool for modularizing React components",
+  "main": "server.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
     "build": "echo 'Build complete - static assets ready'",
-    "cli": "node modularize.js",
-    "test": "node test.js",
     "vercel-build": "echo 'No build step required'"
-  }
+  },
+  "keywords": ["react", "component", "modularizer", "refactoring"],
+  "author": "Your Name",
+  "license": "MIT"
 }
