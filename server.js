@@ -282,3 +282,4 @@ app.use((req, res) => {
 
 // Export for Vercel (no app.listen for serverless)
 module.exports = app;
+module.exports.handler = serverless(app);
