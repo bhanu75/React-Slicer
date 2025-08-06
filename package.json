@@ -1,21 +1,27 @@
 {
   "name": "react-component-modularizer",
   "version": "1.0.0",
-  "description": "Professional tool for modularizing React components",
+  "description": "Professional React Component Modularizer - Extract components from monolithic App.jsx files",
   "main": "server.js",
   "engines": {
     "node": "18.x"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "@babel/parser": "^7.23.0",
+    "@babel/traverse": "^7.23.0",
+    "@babel/generator": "^7.23.0",
+    "prettier": "^3.0.0"
   },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
     "build": "echo 'Build complete - static assets ready'",
+    "cli": "node modularize.js",
+    "test": "node test.js",
     "vercel-build": "echo 'No build step required'"
   },
-  "keywords": ["react", "component", "modularizer", "refactoring"],
-  "author": "Your Name",
+  "keywords": ["react", "component", "modularizer", "refactoring", "babel", "ast"],
+  "author": "Professional Dev Team",
   "license": "MIT"
 }
