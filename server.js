@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const serverless = require('serverless-http');
+const ReactModularizer = require('./modularize');
 
 const app = express();
 
@@ -26,13 +28,54 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Simple test endpoint first
+// API endpoint for modularization
+app.post('/api/modularize', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const { code } = req.body;
+    
+    if (!code || code.trim().length === 0) {
+      return res.status(400).json({
+        error: 'No code provided',
+        message: 'Please provide App.jsx content to modularize'
+      });
+    }
+
+    console.log('🚀 Processing modularization request...');
+    
+    // Create custom modularizer instance for API
+    const modularizer = new APIModularizer();
+    const results = await modularizer.processCode(code);
+    
+    const processingTime = Date.now() - startTime;
+    
+    console.log(`✅ Modularization completed in ${processingTime}ms`);
+    console.log(`📊 Extracted ${results.components.length} components`);
+    
+    res.json({
+      ...results,
+      processingTime,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ API Error:', error.message);
+    
+    res.status(500).json({
+      error: 'Modularization failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: 'vercel'
+    uptime: process.uptime()
   });
 });
 
@@ -47,157 +90,11 @@ app.get('/api/status', (req, res) => {
       'GET /api/health - Health check',
       'GET /api/status - API information'
     ],
-    timestamp: new Date().toISOString(),
-    platform: 'vercel-serverless'
+    timestamp: new Date().toISOString()
   });
 });
 
-// Simplified modularizer without file dependencies
-app.post('/api/modularize', async (req, res) => {
-  const startTime = Date.now();
-  
-  try {
-    const { code } = req.body;
-    
-    if (!code || code.trim().length === 0) {
-      return res.status(400).json({
-        error: 'No code provided',
-        message: 'Please provide App.jsx content to modularize'
-      });
-    }
-
-    // Simple component extraction logic without file system
-    const result = await processCodeInMemory(code);
-    const processingTime = Date.now() - startTime;
-    
-    res.json({
-      ...result,
-      processingTime,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('API Error:', error.message);
-    
-    res.status(500).json({
-      error: 'Modularization failed',
-      message: error.message,
-      details: error.stack,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// In-memory processing function (no file system)
-async function processCodeInMemory(code) {
-  try {
-    // Simple regex-based component extraction for now
-    const components = [];
-    const lines = code.split('\n');
-    let updatedCode = code;
-    
-    // Find function components
-    const functionComponentRegex = /^function\s+([A-Z][a-zA-Z]*)\s*\(/gm;
-    let match;
-    
-    while ((match = functionComponentRegex.exec(code)) !== null) {
-      const componentName = match[1];
-      if (componentName !== 'App') {
-        components.push({
-          name: componentName,
-          filename: `${componentName}.jsx`,
-          code: extractComponentCode(code, componentName, 'function'),
-          type: 'function'
-        });
-      }
-    }
-    
-    // Find arrow components
-    const arrowComponentRegex = /^const\s+([A-Z][a-zA-Z]*)\s*=\s*\(/gm;
-    while ((match = arrowComponentRegex.exec(code)) !== null) {
-      const componentName = match[1];
-      if (componentName !== 'App') {
-        components.push({
-          name: componentName,
-          filename: `${componentName}.jsx`,
-          code: extractComponentCode(code, componentName, 'arrow'),
-          type: 'arrow'
-        });
-      }
-    }
-    
-    // Generate imports
-    const imports = components.map(c => `import ${c.name} from './components/${c.name}';`);
-    
-    // Update main code
-    if (imports.length > 0) {
-      const importSection = imports.join('\n') + '\n\n';
-      updatedCode = code.replace(
-        /(import.*from.*['"];?\s*\n)+/,
-        `$&${importSection}`
-      );
-      
-      // Remove component definitions
-      components.forEach(component => {
-        const regex = new RegExp(`^(function\\s+${component.name}|const\\s+${component.name}\\s*=)[\\s\\S]*?^}[;]?`, 'gm');
-        updatedCode = updatedCode.replace(regex, '').replace(/\n\n\n+/g, '\n\n');
-      });
-    }
-    
-    return {
-      updatedApp: updatedCode.trim(),
-      components,
-      fileStructure: generateFileStructure(components),
-      summary: {
-        extractedCount: components.length,
-        message: `Successfully extracted ${components.length} components`
-      }
-    };
-    
-  } catch (error) {
-    throw new Error(`Processing failed: ${error.message}`);
-  }
-}
-
-function extractComponentCode(fullCode, componentName, type) {
-  const lines = fullCode.split('\n');
-  let componentCode = '';
-  let inComponent = false;
-  let braceCount = 0;
-  let startPattern;
-  
-  if (type === 'function') {
-    startPattern = new RegExp(`^function\\s+${componentName}\\s*\\(`);
-  } else {
-    startPattern = new RegExp(`^const\\s+${componentName}\\s*=`);
-  }
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    
-    if (!inComponent && startPattern.test(line.trim())) {
-      inComponent = true;
-      componentCode += line + '\n';
-      braceCount += (line.match(/{/g) || []).length;
-      braceCount -= (line.match(/}/g) || []).length;
-      continue;
-    }
-    
-    if (inComponent) {
-      componentCode += line + '\n';
-      braceCount += (line.match(/{/g) || []).length;
-      braceCount -= (line.match(/}/g) || []).length;
-      
-      if (braceCount === 0) {
-        break;
-      }
-    }
-  }
-  
-  const fs = require('fs');
-const path = require('path');
-
-// Convert to export format
+// Utility functions for component processing
 function convertToExport(componentCode, componentName, type) {
   if (type === 'function') {
     return componentCode.replace(
@@ -211,8 +108,8 @@ function convertToExport(componentCode, componentName, type) {
 
 async function generateComponentFiles(extractedComponents, formatCodeFn) {
   const componentFiles = [];
-
   const componentsDir = '/tmp/components';
+
   if (!fs.existsSync(componentsDir)) {
     fs.mkdirSync(componentsDir, { recursive: true });
   }
@@ -254,14 +151,88 @@ function generateFileStructure(components) {
   return structure;
 }
 
+// Custom modularizer class for API responses
+class APIModularizer extends ReactModularizer {
+  constructor() {
+    super();
+    this.appFilePath = '/tmp/App.jsx';
+    this.componentsDir = '/tmp/components';
+    this.results = {
+      updatedApp: '',
+      components: [],
+      fileStructure: '',
+      summary: {}
+    };
+  }
+
+  async processCode(code) {
+    // Write temporary App.jsx to /tmp directory
+    fs.writeFileSync('/tmp/App.jsx', code, 'utf8');
+    
+    try {
+      // Parse and extract components
+      const ast = this.parseToAST(code);
+      this.extractComponents(ast);
+      
+      if (this.extractedComponents.length === 0) {
+        return {
+          updatedApp: code,
+          components: [],
+          fileStructure: generateFileStructure([]),
+          summary: {
+            extractedCount: 0,
+            message: 'No extractable components found'
+          }
+        };
+      }
+      
+      // Generate component files content using the utility function
+      const componentFiles = await generateComponentFiles(this.extractedComponents, this.formatCode.bind(this));
+      
+      // Generate updated App.jsx
+      const updatedApp = await this.updateAppFile(ast);
+      
+      // Clean up temporary files
+      this.cleanupTempFiles();
+      
+      return {
+        updatedApp,
+        components: componentFiles,
+        fileStructure: generateFileStructure(componentFiles),
+        summary: {
+          extractedCount: componentFiles.length,
+          message: `Successfully extracted ${componentFiles.length} components`
+        }
+      };
+      
+    } catch (error) {
+      this.cleanupTempFiles();
+      throw error;
+    }
+  }
+
+  cleanupTempFiles() {
+    const filesToClean = ['/tmp/App.jsx', '/tmp/components'];
+    
+    filesToClean.forEach(file => {
+      if (fs.existsSync(file)) {
+        if (fs.statSync(file).isDirectory()) {
+          fs.rmSync(file, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(file);
+        }
+      }
+    });
+  }
+}
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
+  console.error('🚨 Unhandled error:', error);
   
   res.status(500).json({
     error: 'Internal server error',
-    message: error.message,
+    message: 'An unexpected error occurred',
     timestamp: new Date().toISOString()
   });
 });
@@ -280,6 +251,21 @@ app.use((req, res) => {
   });
 });
 
-// Export for Vercel (no app.listen for serverless)
+// For local development only
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log('🚀 React Component Modularizer Server');
+    console.log('=' .repeat(50));
+    console.log(`🌐 Frontend: http://localhost:${PORT}`);
+    console.log(`🔧 API: http://localhost:${PORT}/api`);
+    console.log(`📊 Health: http://localhost:${PORT}/api/health`);
+    console.log(`📋 Status: http://localhost:${PORT}/api/status`);
+    console.log('=' .repeat(50));
+    console.log('✅ Server ready for professional use!');
+  });
+}
+
+// Export for Vercel
 module.exports = app;
 module.exports.handler = serverless(app);
