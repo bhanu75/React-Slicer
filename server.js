@@ -194,10 +194,14 @@ function extractComponentCode(fullCode, componentName, type) {
     }
   }
   
-  // Convert to export format
+  const fs = require('fs');
+const path = require('path');
+
+// Convert to export format
+function convertToExport(componentCode, componentName, type) {
   if (type === 'function') {
     return componentCode.replace(
-      new RegExp(`^function\\s+${componentName}`), 
+      new RegExp(`^\\s*function\\s+${componentName}`),
       `export default function ${componentName}`
     );
   } else {
@@ -205,24 +209,51 @@ function extractComponentCode(fullCode, componentName, type) {
   }
 }
 
+async function generateComponentFiles(extractedComponents, formatCodeFn) {
+  const componentFiles = [];
+
+  const componentsDir = '/tmp/components';
+  if (!fs.existsSync(componentsDir)) {
+    fs.mkdirSync(componentsDir, { recursive: true });
+  }
+
+  for (const component of extractedComponents) {
+    const exportCode = convertToExport(component.code, component.name, component.type);
+    const formattedCode = await formatCodeFn(exportCode);
+
+    const filePath = path.join(componentsDir, `${component.name}.jsx`);
+    fs.writeFileSync(filePath, formattedCode, 'utf8');
+
+    componentFiles.push({
+      name: component.name,
+      filename: `${component.name}.jsx`,
+      code: formattedCode,
+      type: component.type
+    });
+  }
+
+  return componentFiles;
+}
+
 function generateFileStructure(components) {
   let structure = `your-project/\n├── App.jsx                 // Updated with imports\n├── components/             // Generated components\n`;
-  
+
   components.forEach((component, index) => {
     const isLast = index === components.length - 1;
     const prefix = isLast ? '└──' : '├──';
     structure += `│   ${prefix} ${component.filename}\n`;
   });
-  
+
   structure += `└── package.json           // Your project config\n\n`;
   structure += `📊 Summary:\n`;
   structure += `• ${components.length} components extracted\n`;
   structure += `• ${components.length + 1} files created\n`;
   structure += `• Clean, modular architecture\n`;
   structure += `• Ready for production use`;
-  
+
   return structure;
 }
+
 
 // Error handling middleware
 app.use((error, req, res, next) => {
