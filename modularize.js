@@ -82,22 +82,23 @@ class ReactModularizer {
     console.log('🔍 Scanning for extractable components...');
     
     const componentsToRemove = [];
+    const self = this; // Fix for 'this' context issue
     
     traverse(ast, {
       // Handle function Component() declarations
       FunctionDeclaration(path) {
-        const name = path.node.id.name;
+        const name = path.node.id?.name;
         
-        if (this.isExtractableComponent(name)) {
+        if (name && self.isExtractableComponent(name)) {
           const componentCode = generate(path.node, {}, '').code;
           
-          this.extractedComponents.push({
+          self.extractedComponents.push({
             name,
             code: componentCode,
             type: 'function'
           });
           
-          this.imports.push(`import ${name} from './components/${name}';`);
+          self.imports.push(`import ${name} from './components/${name}';`);
           componentsToRemove.push(path);
           
           console.log(`  ✓ Found function component: ${name}`);
@@ -107,22 +108,22 @@ class ReactModularizer {
       // Handle const Component = () => {} declarations
       VariableDeclaration(path) {
         path.node.declarations.forEach(declarator => {
-          if (declarator.id.name && 
+          if (declarator.id?.name && 
               (declarator.init?.type === 'ArrowFunctionExpression' || 
                declarator.init?.type === 'FunctionExpression')) {
             
             const name = declarator.id.name;
             
-            if (this.isExtractableComponent(name)) {
+            if (name && self.isExtractableComponent(name)) {
               const componentCode = generate(path.node, {}, '').code;
               
-              this.extractedComponents.push({
+              self.extractedComponents.push({
                 name,
                 code: componentCode,
                 type: 'arrow'
               });
               
-              this.imports.push(`import ${name} from './components/${name}';`);
+              self.imports.push(`import ${name} from './components/${name}';`);
               componentsToRemove.push(path);
               
               console.log(`  ✓ Found arrow function component: ${name}`);
