@@ -1,4 +1,4 @@
-// pages/api/modularize.js
+
 
 const ReactModularizer = require('../../lib/modularize.js');
 
