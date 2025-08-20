@@ -1,11 +1,14 @@
 {
-  "name": "react-slicer",
+  "name": "react-component-modularizer",
   "version": "1.0.0",
-  "description": "Web app to modularize React App.jsx files",
+  "description": "Professional React component modularizer for Next.js applications",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node test.js",
+    "modularize": "node lib/modularize.js",
+    "lint": "next lint"
   },
   "keywords": [
     "react",
@@ -13,7 +16,8 @@
     "modularize",
     "ast",
     "babel",
-    "prettier"
+    "prettier",
+    "component-extraction"
   ],
   "author": "Internal Dev Team",
   "license": "MIT",
@@ -31,9 +35,14 @@
   "devDependencies": {
     "tailwindcss": "^3.3.0",
     "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "autoprefixer": "^10.4.0",
+    "eslint": "8.48.0",
+    "eslint-config-next": "13.5.6"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
+  },
+  "bin": {
+    "modularize": "./lib/modularize.js"
   }
 }
