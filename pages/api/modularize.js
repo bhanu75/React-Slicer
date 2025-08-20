@@ -1,6 +1,6 @@
 
+const ReactModularizer = require('../../lib/modularizer.js');
 
-const ReactModularizer = require('../../lib/modularize.js');
 
 export const config = {
   api: {
